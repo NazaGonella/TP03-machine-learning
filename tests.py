@@ -2,12 +2,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import src.data_handler as data_handler
+import src.models as models
 import os
 
 project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+CANTIDAD_DE_CLASES = 48
 
-X_images : np.ndarray[float] = np.load(f"{project_root}/data/X_images.npy")
-y_images : np.ndarray[float] = np.load(f"{project_root}/data/y_images.npy")
+X_images : np.ndarray[float] = np.load(f"{project_root}/TP03/data/X_images.npy")
+y_images : np.ndarray[float] = np.load(f"{project_root}/TP03/data/y_images.npy")
 
-print(X_images)
-print(set(y_images))
+# print(X_images)
+# print(set(y_images))
+
+
+X_images = X_images / 255
+X_train : pd.DataFrame
+X_validation : pd.DataFrame
+X_test : pd.DataFrame
+X_train, X_validation, X_test = data_handler.get_splitted_dataset(pd.DataFrame(X_images))
+y_images = np.array([[0 if y_images[x] != i else 1 for i in range(CANTIDAD_DE_CLASES)] for x in range(len(X_images))], dtype=float)
+red = models.RedNeuronal([2,4,2], [models.RedNeuronal.relu, models.RedNeuronal.relu, models.RedNeuronal.softmax])
+red.train(X_images, y_images)
+# print(np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]))
