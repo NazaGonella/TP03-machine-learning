@@ -10,22 +10,17 @@ class RedNeuronal:
             self, 
             M : list[int], 
             h : list[str], 
-            initial_weights : int = 0
         ):
         self.M : list[int] = M
-        self.h : list[str] = h
-        self.initial_weights : int = initial_weights
-        self.L : int = len(M) # cantidad de layers sin contar input
-        
-        self.z : list[np.ndarray] = [np.zeros(M[i], dtype=float) for i in range(self.L)] # Falta layer de input en z[0]
-        # self.a : list[np.ndarray] = [np.array(
-        #     [0 for _ in range(M[i])], dtype=float
-        # ) for i in range(len(M))]
-        self.a : list[np.ndarray] = [np.zeros(M[i], dtype=float) for i in range(self.L)]
-        self.w : list[np.ndarray] = np.array([]) # len(M) matrices de pesos, I en w[0]
-        self.w_0 : list[np.ndarray] = [np.array(
-            [0 for _ in range(M[i])], dtype=float
-        ) for i in range(len(M))] # len(M)
+        self.M.append(48)
+        self.M.insert(0, 784)
+        # print("M: ", M)
+        self.h : list[str] = h # Funciones de activación, incluyendo última capa
+        self.L : int = len(M) # cantidad de capas, incluyendo input y output.
+        self.z : list[np.ndarray] = []
+        self.a : list[np.ndarray] = []
+        self.W : list[np.ndarray] = []
+        self.w_0 : list[np.ndarray] = []
     
     def relu(self, x : np.ndarray, gradient : bool = False) -> np.ndarray:
         if gradient:
@@ -36,68 +31,108 @@ class RedNeuronal:
         e_x : np.ndarray = np.exp(x - np.max(x))
         if gradient:
             pass
-        return e_x / e_x.sum(axis=0)
+        # return e_x / e_x.sum(axis=1)
+        return e_x / e_x.sum(axis=1, keepdims=True)
     
     def cross_entropy(self, y_true : np.ndarray, y_pred : np.ndarray) -> float:
         epsilon = 1e-10
         y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
-        return - (y_true.T @ np.log(y_pred))
+        # return - (y_true.T @ np.log(y_pred))
+        return -np.sum(y_true * np.log(y_pred), axis=1)
     
     def cross_entropy_gradient(self, y_true : np.ndarray, y_pred : np.ndarray) -> np.ndarray:
         epsilon = 1e-10
         y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
-        return - (y_true / y_pred)
+        # return - (y_true / y_pred)
+        return -np.sum(y_true / y_pred, axis=1)
 
-    def computar_gradiente(self, y_i : np.ndarray, W : np.ndarray, w_0 : np.ndarray) -> np.ndarray:
+    def computar_gradiente(self, x : np.ndarray, y : np.ndarray, W : np.ndarray, w_0 : np.ndarray) -> np.ndarray:
         # Forward pass
-        suma = 0
-        for l in range(0, self.L):
-            suma += 1
-            self.a[l] = (W[l] @ self.z[l]) + w_0[l]
-            self.z[l+1] = self.relu(self.a[l]) if self.h[l] == 'relu' else self.softmax(self.a[l])
+        # suma = 0
+        self.z.append(x)    # Cada fila de x es una muestra
+        for l in range(0, self.L-1):
+            # print("W[l].shape", W[l].shape)
+            # print("z@W.shape: ", (self.z[l] @ W[l]).shape)
+            # print("z[l].shape", self.z[l].shape)
+            self.a.append((self.z[l] @ W[l]) + w_0[l])
+            self.z.append(self.relu(self.a[l]) if self.h[l] == 'relu' else self.softmax(self.a[l]))
         
-        pred : np.ndarray = self.z[self.L]
-        loss_i : float = self.cross_entropy(y_i, pred)
+        pred : np.ndarray = self.z[self.L-1]
+        loss_i : float = self.cross_entropy(y, pred)
+        print("pred: ", pred)
+        print("loss_i: ", loss_i)
+        print("len(pred[0]): ", np.sum(pred[0]))
         # Backward-pass
-        delta : list[np.ndarray] = [np.zeros_like(a) for a in self.a]
-        delta[self.L-1] = self.relu(self.a[self.L-1], True) if self.h[self.L-1] == 'relu' else self.softmax(self.a[self.L-1], True) * self.cross_entropy_gradient(y_i, pred)
-        al_aw = [np.zeros_like(W[l]) for l in range(self.L)]
-        al_aw0 = [np.zeros_like(w_0[l]) for l in range(self.L)]
-        al_aw[self.L - 1] = np.outer(delta[self.L - 1], self.z[self.L - 1])
-        al_aw0[self.L - 1] = delta[self.L - 1]
-        for l in range(self.L - 1, 0, -1):
-            activation_grad = self.relu(self.a[l], True) if self.h[l] == 'relu' else self.softmax(self.a[l], True)
-            delta[l] = activation_grad * (W[l + 1].T @ delta[l + 1])
-            al_aw[l] = np.outer(delta[l], self.z[l])
-            al_aw0[l] = delta[l]
+        # delta : list[np.ndarray] = [np.zeros_like(a) for a in self.a]
+        # delta[self.L-1] = self.relu(self.a[self.L-1], True) if self.h[self.L-1] == 'relu' else self.softmax(self.a[self.L-1], True) * self.cross_entropy_gradient(y_i, pred)
+        # al_aw = [np.zeros_like(W[l]) for l in range(self.L)]
+        # al_aw0 = [np.zeros_like(w_0[l]) for l in range(self.L)]
+        # al_aw[self.L - 1] = np.outer(delta[self.L - 1], self.z[self.L - 1])
+        # al_aw0[self.L - 1] = delta[self.L - 1]
+        # for l in range(self.L - 1, 0, -1):
+        #     activation_grad = self.relu(self.a[l], True) if self.h[l] == 'relu' else self.softmax(self.a[l], True)
+        #     delta[l] = activation_grad * (W[l + 1].T @ delta[l + 1])
+        #     al_aw[l] = np.outer(delta[l], self.z[l])
+        #     al_aw0[l] = delta[l]
         
-        return pred, loss_i, al_aw, al_aw0
-        # return
+        # return pred, loss_i, al_aw, al_aw0
+        return np.array([])
 
 
     def train(self, x, y) -> None:
-        self.z.insert(0, x[0])
         # print("z: ", len(self.z[0]))
-        self.w = [
+        self.W = [
             np.array([
-                [
-                    self.initial_weights for _ in range(len(self.z[i]))
-                ] for _ in range(self.M[i])
-            ], dtype=float) for i in range(self.L)
+                [0 for _ in range(self.M[l])] for _ in range(self.M[l-1])
+            ], dtype=float) for l in range(1, len(self.M))
+        ] # cada fila representa un nodo x
+        self.w_0 = [
+            np.array([0 for _ in range(self.M[l])], dtype=float) for l in range(1, len(self.M))
         ]
-        pred, loss_i, al_aw, al_aw0 = self.computar_gradiente(y[0], self.w, self.w_0)
-        print("pred: ", pred)
-        print("loss_i: ", loss_i)
-        print("al_aw: ", al_aw)
-        print("al_aw0: ", al_aw0)
+        # print("len(self.w_0): ", len(self.w_0[1]))
+        # print("M: ", self.M)
+        # print("W: ", self.W[2].shape)
+        # print("len(W): ", len(self.W[0][0]))
+        # pred, loss_i, al_aw, al_aw0 = self.computar_gradiente(y[0], self.W, self.w_0)
+        self.computar_gradiente(x, y, self.W, self.w_0)
+        # print("pred: ", pred)
+        # print("loss_i: ", loss_i)
+        # print("al_aw: ", al_aw)
+        # print("al_aw0: ", al_aw0)
 
-# red = RedNeuronal([2, 7, 5], [RedNeuronal.relu, RedNeuronal.relu])
-# print(red.L)
-# print(red.M)
-# print(red.z)
+# red = RedNeuronal([2, 7], [RedNeuronal.relu, RedNeuronal.relu])
+# x = np.array([
+#     [0,1,0],
+#     [0,1,0],
+#     [0,0,1],
+# ])
+# y = np.array([
+#     [0.2,0.7,0.1],
+#     [0.05,0.9,0.05],
+#     [0,0.1,0.9],
+# ])
+# a = np.array([[
+#     0,
+#     1,
+#     0,
+# ]])
+# b = np.array([[
+#     0.2,
+#     0.7,
+#     0.1,
+# ]])
+# print(red.relu())
 # print("")
-# print(red.softmax(red.w[2]))
+# print("x: ", x)
+# print("y: ", y)
+# print("")
+# print("a: ", a)
+# print("b", b)
+# print("")
+# print(red.cross_entropy(a, b))
+# red.train(x, y)
 
-# x = np.array([0.3, 0.5, 0.2, 4, 0.1])
-# print(red.softmax(red.w[2]).T @ x)
-# print(list(range(10, 1, -1)))
+# CADA ROW ES UNA MUESTRA
+# axis=1
+# FILAS
+# PRIMER INDEX
