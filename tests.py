@@ -23,5 +23,6 @@ X_train, X_validation, X_test = data_handler.get_splitted_dataset(pd.DataFrame(X
 y_images = np.array([[0 if y_images[x] != i else 1 for i in range(CANTIDAD_DE_CLASES)] for x in range(len(X_images))], dtype=float)
 red = models.RedNeuronal([2,4], ['relu', 'relu', 'softmax'])
 # print(X_images.shape)
+np.random.seed(42)
 red.train(X_images, y_images)
 # print(np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]))

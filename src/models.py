@@ -61,7 +61,7 @@ class RedNeuronal:
         loss_i : float = self.cross_entropy(y, pred)
         print("pred: ", pred)
         print("loss_i: ", loss_i)
-        print("len(pred[0]): ", np.sum(pred[0]))
+        # print("len(pred[0]): ", np.sum(pred[3]))
         # Backward-pass
         # delta : list[np.ndarray] = [np.zeros_like(a) for a in self.a]
         # delta[self.L-1] = self.relu(self.a[self.L-1], True) if self.h[self.L-1] == 'relu' else self.softmax(self.a[self.L-1], True) * self.cross_entropy_gradient(y_i, pred)
@@ -81,19 +81,27 @@ class RedNeuronal:
 
     def train(self, x, y) -> None:
         # print("z: ", len(self.z[0]))
+        # self.W = [
+        #     np.array([
+        #         [0 for _ in range(self.M[l])] for _ in range(self.M[l-1])
+        #     ], dtype=float) for l in range(1, len(self.M))
+        # ] # cada fila representa un nodo x
+        # self.w_0 = [
+        #     np.array([0 for _ in range(self.M[l])], dtype=float) for l in range(1, len(self.M))
+        # ]
         self.W = [
-            np.array([
-                [0 for _ in range(self.M[l])] for _ in range(self.M[l-1])
-            ], dtype=float) for l in range(1, len(self.M))
-        ] # cada fila representa un nodo x
+            np.random.randn(self.M[l-1], self.M[l]) * np.sqrt(2 / (self.M[l-1] + self.M[l]))
+            for l in range(1, len(self.M))
+        ]
         self.w_0 = [
-            np.array([0 for _ in range(self.M[l])], dtype=float) for l in range(1, len(self.M))
+            np.zeros(self.M[l], dtype=float) for l in range(1, len(self.M))
         ]
         # print("len(self.w_0): ", len(self.w_0[1]))
         # print("M: ", self.M)
         # print("W: ", self.W[2].shape)
         # print("len(W): ", len(self.W[0][0]))
         # pred, loss_i, al_aw, al_aw0 = self.computar_gradiente(y[0], self.W, self.w_0)
+        # self.computar_gradiente(np.array([x[0]]), np.array([y[0]]), self.W, self.w_0)
         self.computar_gradiente(x, y, self.W, self.w_0)
         # print("pred: ", pred)
         # print("loss_i: ", loss_i)
