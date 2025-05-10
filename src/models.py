@@ -144,7 +144,7 @@ class RedNeuronal:
                 last_loss_mean = loss_mean
         self.pred = pred
 
-    def stochastic_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], batch_size : int = 1, K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
+    def stochastic_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], batch_size_2_pow : int = 0, K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
         # K: K steps LR schedule
         # c: exponential LR schedule
         # S: exponential LR schedule
@@ -157,6 +157,7 @@ class RedNeuronal:
         dw_0 : list[np.ndarray]
         last_loss_mean : float = np.inf
         for epoch in range(1, epochs+1):
+            batch_size : int = 2 ** batch_size_2_pow if 2 ** batch_size_2_pow < len(X) else len(X)
             for batch in range(len(X) // batch_size):
                 X_b : np.ndarray = X[batch * batch_size : (batch + 1) * batch_size]
                 Y_b : np.ndarray = Y[batch * batch_size : (batch + 1) * batch_size]
