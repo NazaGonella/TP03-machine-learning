@@ -106,7 +106,10 @@ class RedNeuronal:
         # print("")
         return pred, loss, dW, dw_0
     
-    def gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : float, print_results_rate : int = -1) -> None:
+    def gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
+        # K: K steps LR schedule
+        # c: exponential LR schedule
+        # S: exponential LR schedule
         # Inicialización
         self.W, self.w_0 = self.initialize_weights()
         # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
@@ -120,8 +123,15 @@ class RedNeuronal:
             
             # actualizaciones
             for i in range(self.L - 1):
-                self.W[i] -= learning_rate * dW[i]
-                self.w_0[i] -= learning_rate * dw_0[i]
+                lr_t : float
+                if c > 0 and S > 0:
+                    lr_t = learning_rate[0] * ((1 + ((epoch-1) / S))**c)
+                elif K > 0:
+                    lr_t = ((1 - ((epoch-1) / K))*learning_rate[0]) + (((epoch-1) / K)*learning_rate[1])
+                else:
+                    lr_t = learning_rate[0] - (((learning_rate[0] - learning_rate[1]) / epochs) * (epoch-1))
+                self.W[i] -= lr_t * dW[i]
+                self.w_0[i] -= lr_t * dw_0[i]
             
             # print("loss.shape: ", loss.shape)
             if (epoch) % print_results_rate == 0 and print_results_rate != -1:
