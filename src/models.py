@@ -21,6 +21,7 @@ class RedNeuronal:
         self.a : list[np.ndarray] = []
         self.W : list[np.ndarray] = []
         self.w_0 : list[np.ndarray] = []
+        self.pred : np.ndarray = np.array([])
     
     def relu(self, x : np.ndarray, gradient : bool = False) -> np.ndarray:
         if gradient:
@@ -110,12 +111,12 @@ class RedNeuronal:
         # Inicialización
         self.W, self.w_0 = self.initialize_weights()
         # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
-        
+        pred : np.ndarray
+        loss : np.ndarray
+        dW : list[np.ndarray] 
+        dw_0 : list[np.ndarray]
+        last_loss_mean : float = np.inf
         for epoch in range(epochs):
-            pred : np.ndarray
-            loss : np.ndarray
-            dW : list[np.ndarray] 
-            dw_0 : list[np.ndarray]
             pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
             # if epoch % 100 == 0:
             #     print("pred: ", pred)
@@ -135,8 +136,12 @@ class RedNeuronal:
             
             # print("loss.shape: ", loss.shape)
             if epoch % 100 == 0:
-                print(f"Epoch {epoch}, Loss: {loss}")
-
+                loss_mean : float = np.mean(loss)
+                print(f"Epoch {epoch}\n-> Loss: {loss}\n-> Loss Mean = {loss_mean}")
+                if last_loss_mean != np.inf:
+                    print(f"-> Difference = {'+' if loss_mean - last_loss_mean >= 0 else ''}{loss_mean - last_loss_mean}")
+                last_loss_mean = loss_mean
+        self.pred = pred
         return self.W, self.w_0
 
 # red = RedNeuronal([2, 7], [RedNeuronal.relu, RedNeuronal.relu])
