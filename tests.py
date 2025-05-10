@@ -26,3 +26,5 @@ red = models.RedNeuronal([2,4], ['relu', 'relu', 'softmax'])
 np.random.seed(42)
 red.train(X_images, y_images)
 # print(np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]))
+
+print(list(range(9, -1, -1)))

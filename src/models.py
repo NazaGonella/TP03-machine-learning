@@ -81,15 +81,26 @@ class RedNeuronal:
         print("al_aw[self.L-2].shape: ", al_aw[self.L-2].shape)
         print("al_aw0[self.L-2].shape: ", al_aw0[self.L-2].shape)
         print("self.W[self.L-2].shape: ", self.W[self.L-2].shape)
-        # for l in range(self.L - 1, 0, -1):
-        #     activation_grad = self.relu(self.a[l], True) if self.h[l] == 'relu' else self.softmax(self.a[l], True)
-        #     delta[l] = activation_grad * (W[l + 1].T @ delta[l + 1])
-        #     al_aw[l] = np.outer(delta[l], self.z[l])
-        #     al_aw0[l] = delta[l]
-        
-        # return pred, loss_i, al_aw, al_aw0
-        return np.array([])
-
+        for l in range(self.L - 3, -1, -1):
+            activation_grad = self.relu(self.a[l], True) if self.h[l] == 'relu' else self.softmax(self.a[l], True)
+            # print(" l", l)
+            # print("self.W[l].shape: ", self.W[l].shape)
+            # print("delta[l].shape: ", delta[l].shape)
+            # print("activation_grad.shape: ", activation_grad.shape)
+            # print("wl@dl.shape: ", (delta[l+1] @ self.W[l+1].T).shape)
+            # print("result: ", (activation_grad * (delta[l+1] @ self.W[l+1].T)).shape)
+            delta[l] = activation_grad * (delta[l+1] @ self.W[l+1].T)
+            al_aw[l] = self.z[l].T @ delta[l]
+            al_aw0[l] = delta[l]
+            # al_aw[l] = 
+        print("")
+        print("pred.shape: ", pred.shape)
+        print("loss_i.shape: ", loss_i.shape)
+        print("al_aw[self.L-2].shape: ", al_aw[self.L-2].shape)
+        print("al_aw0[self.L-2].shape: ", al_aw0[self.L-2].shape)
+        print("")
+        return pred, loss_i, al_aw, al_aw0
+        # return np.array([])
 
     def train(self, x, y) -> None:
         # print("z: ", len(self.z[0]))
