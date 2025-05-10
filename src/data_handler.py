@@ -16,9 +16,9 @@ def get_splitted_dataset(
     # train : pd.DataFrame = df.sample(frac=train_fraction, random_state=seed)
     # validation : pd.DataFrame = df.drop(train.index).sample(frac=val_fraction/(val_fraction + test_fraction), random_state=seed)
     # test : pd.DataFrame = df.drop(validation.index)
-    print("train_fraction: ", train_fraction)
-    print("val_fraction: ", val_fraction)
-    print("test_fraction: ", test_fraction)
+    # print("train_fraction: ", train_fraction)
+    # print("val_fraction: ", val_fraction)
+    # print("test_fraction: ", test_fraction)
     
     # Shuffle data
     indices = np.arange(len(df_x))

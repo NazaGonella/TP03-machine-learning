@@ -14,7 +14,6 @@ class RedNeuronal:
         self.M : list[int] = M
         self.M.append(48)
         self.M.insert(0, 784)
-        # print("M: ", M)
         self.h : list[str] = h # Funciones de activación, incluyendo última capa
         self.L : int = len(M) # cantidad de capas, incluyendo input y output.
         self.z : list[np.ndarray] = []
@@ -106,8 +105,8 @@ class RedNeuronal:
         # print("dW0.shape[self.L-2]: ", dw_0[self.L-2].shape)
         # print("")
         return pred, loss, dW, dw_0
-
-    def gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : float, print_results_rate : int = -1):
+    
+    def gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : float, print_results_rate : int = -1) -> None:
         # Inicialización
         self.W, self.w_0 = self.initialize_weights()
         # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
@@ -116,7 +115,7 @@ class RedNeuronal:
         dW : list[np.ndarray] 
         dw_0 : list[np.ndarray]
         last_loss_mean : float = np.inf
-        for epoch in range(epochs):
+        for epoch in range(1, epochs+1):
             pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
             
             # actualizaciones
@@ -125,11 +124,32 @@ class RedNeuronal:
                 self.w_0[i] -= learning_rate * dw_0[i]
             
             # print("loss.shape: ", loss.shape)
-            if epoch % print_results_rate == 0 and print_results_rate != -1:
+            if (epoch) % print_results_rate == 0 and print_results_rate != -1:
                 loss_mean : float = np.mean(loss)
                 print(f"Epoch {epoch}\n-> Loss = {loss}\n-> Loss Mean = {loss_mean}")
                 if last_loss_mean != np.inf:
                     print(f"-> Difference = {'+' if loss_mean - last_loss_mean >= 0 else ''}{loss_mean - last_loss_mean}")
                 last_loss_mean = loss_mean
         self.pred = pred
-        return self.W, self.w_0
+
+    def get_train_accuracy(self, y_ground_truth: np.ndarray) -> float:
+        pred_labels = np.argmax(self.pred, axis=1)
+        true_labels = np.argmax(y_ground_truth, axis=1)
+        return np.mean(pred_labels == true_labels)
+
+    def get_train_confusion_matrix(self, y_ground_truth: np.ndarray) -> np.ndarray:
+        num_classes : int = y_ground_truth.shape[1]
+        pred_labels : np.ndarray = np.argmax(self.pred, axis=1)
+        true_labels : np.ndarray = np.argmax(y_ground_truth, axis=1)
+        cm : np.ndarray = np.zeros((num_classes, num_classes), dtype=int)
+        for true, self.pred in zip(true_labels, pred_labels):
+            cm[true, self.pred] += 1
+        return cm
+
+    def get_accuracy(self, y_ground_truth: np.ndarray, pred : np.ndarray) -> float:
+        pred_labels = np.argmax(pred, axis=1)
+        true_labels = np.argmax(y_ground_truth, axis=1)
+        return np.mean(pred_labels == true_labels)
+    
+    def get_prediction(self, x : np.ndarray) -> np.ndarray:
+        return self.forward_pass(x, self.W, self.w_0)
