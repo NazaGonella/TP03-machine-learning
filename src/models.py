@@ -107,7 +107,7 @@ class RedNeuronal:
         # print("")
         return pred, loss, dW, dw_0
 
-    def gradient_descent(self, X, Y, epochs, learning_rate):
+    def gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : float, print_results_rate : int = -1):
         # Inicialización
         self.W, self.w_0 = self.initialize_weights()
         # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
@@ -118,26 +118,16 @@ class RedNeuronal:
         last_loss_mean : float = np.inf
         for epoch in range(epochs):
             pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
-            # if epoch % 100 == 0:
-            #     print("pred: ", pred)
-            #     print("np.sum(pred[self.L-2]): ", np.sum(pred[self.L-2]))
             
-            # Actualización de pesos y sesgos
+            # actualizaciones
             for i in range(self.L - 1):
-                # if epoch % 100 == 0:
-                #     print(f"EPOCH {epoch}, LAYER {i}")
-                #     print("W[self.L-2].shape: ", self.W[i].shape)
-                #     print("w_0[self.L-2].shape: ", self.w_0[i].shape)
-                #     print("dW.shape[self.L-2]: ", dW[i].shape)
-                #     print("dw_0.shape[self.L-2]: ", dw_0[i].shape)
-                #     print("")
                 self.W[i] -= learning_rate * dW[i]
                 self.w_0[i] -= learning_rate * dw_0[i]
             
             # print("loss.shape: ", loss.shape)
-            if epoch % 100 == 0:
+            if epoch % print_results_rate == 0 and print_results_rate != -1:
                 loss_mean : float = np.mean(loss)
-                print(f"Epoch {epoch}\n-> Loss: {loss}\n-> Loss Mean = {loss_mean}")
+                print(f"Epoch {epoch}\n-> Loss = {loss}\n-> Loss Mean = {loss_mean}")
                 if last_loss_mean != np.inf:
                     print(f"-> Difference = {'+' if loss_mean - last_loss_mean >= 0 else ''}{loss_mean - last_loss_mean}")
                 last_loss_mean = loss_mean

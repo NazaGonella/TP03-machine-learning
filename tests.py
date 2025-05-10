@@ -25,6 +25,3 @@ red = models.RedNeuronal([2,4], ['relu', 'relu', 'softmax'])
 # print(X_images.shape)
 np.random.seed(42)
 red.gradient_descent(X_images, y_images, 1000, 0.001)
-# print(np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]))
-
-# print(list(range(9, -1, -1)))
