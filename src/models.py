@@ -106,7 +106,7 @@ class RedNeuronal:
         # print("")
         return pred, loss, dW, dw_0
     
-    def gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
+    def batch_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
         # K: K steps LR schedule
         # c: exponential LR schedule
         # S: exponential LR schedule
@@ -124,12 +124,14 @@ class RedNeuronal:
             # actualizaciones
             for i in range(self.L - 1):
                 lr_t : float
+                # Rate scheduling
                 if c > 0 and S > 0:
                     lr_t = learning_rate[0] * ((1 + ((epoch-1) / S))**c)
                 elif K > 0:
                     lr_t = ((1 - ((epoch-1) / K))*learning_rate[0]) + (((epoch-1) / K)*learning_rate[1])
                 else:
                     lr_t = learning_rate[0] - (((learning_rate[0] - learning_rate[1]) / epochs) * (epoch-1))
+
                 self.W[i] -= lr_t * dW[i]
                 self.w_0[i] -= lr_t * dw_0[i]
             
@@ -137,6 +139,48 @@ class RedNeuronal:
             if (epoch) % print_results_rate == 0 and print_results_rate != -1:
                 loss_mean : float = np.mean(loss)
                 print(f"Epoch {epoch}\n-> Loss = {loss}\n-> Loss Mean = {loss_mean}")
+                if last_loss_mean != np.inf:
+                    print(f"-> Difference = {'+' if loss_mean - last_loss_mean >= 0 else ''}{loss_mean - last_loss_mean}")
+                last_loss_mean = loss_mean
+        self.pred = pred
+
+    def stochastic_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], batch_size : int = 1, K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
+        # K: K steps LR schedule
+        # c: exponential LR schedule
+        # S: exponential LR schedule
+        # Inicialización
+        self.W, self.w_0 = self.initialize_weights()
+        # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
+        pred : np.ndarray
+        loss : np.ndarray
+        dW : list[np.ndarray] 
+        dw_0 : list[np.ndarray]
+        last_loss_mean : float = np.inf
+        for epoch in range(1, epochs+1):
+            for batch in range(len(X) // batch_size):
+                X_b : np.ndarray = X[batch * batch_size : (batch + 1) * batch_size]
+                Y_b : np.ndarray = Y[batch * batch_size : (batch + 1) * batch_size]
+                pred, loss, dW, dw_0 = self.computar_gradiente(X_b, Y_b, self.W, self.w_0)
+                
+                # actualizaciones
+                for i in range(self.L - 1):
+                    lr_t : float
+                    # Rate scheduling
+                    if c > 0 and S > 0:
+                        lr_t = learning_rate[0] * ((1 + ((epoch-1) / S))**c)
+                    elif K > 0:
+                        lr_t = ((1 - ((epoch-1) / K))*learning_rate[0]) + (((epoch-1) / K)*learning_rate[1])
+                    else:
+                        lr_t = learning_rate[0] - (((learning_rate[0] - learning_rate[1]) / epochs) * (epoch-1))
+
+                    self.W[i] -= lr_t * dW[i]
+                    self.w_0[i] -= lr_t * dw_0[i]
+            
+            # print("loss.shape: ", loss.shape)
+            if (epoch) % print_results_rate == 0 and print_results_rate != -1:
+                loss_mean : float = np.mean(loss)
+                # print(f"Epoch {epoch}\n-> Loss = {loss}\n-> Loss Mean = {loss_mean}")
+                print(f"Epoch {epoch}\n-> Loss Mean = {loss_mean}")
                 if last_loss_mean != np.inf:
                     print(f"-> Difference = {'+' if loss_mean - last_loss_mean >= 0 else ''}{loss_mean - last_loss_mean}")
                 last_loss_mean = loss_mean
