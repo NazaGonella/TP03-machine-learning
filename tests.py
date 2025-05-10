@@ -24,7 +24,7 @@ y_images = np.array([[0 if y_images[x] != i else 1 for i in range(CANTIDAD_DE_CL
 red = models.RedNeuronal([2,4], ['relu', 'relu', 'softmax'])
 # print(X_images.shape)
 np.random.seed(42)
-red.train(X_images, y_images)
+red.gradient_descent(X_images, y_images, 1, 0.5)
 # print(np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]))
 
-print(list(range(9, -1, -1)))
+# print(list(range(9, -1, -1)))
