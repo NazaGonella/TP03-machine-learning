@@ -9,47 +9,77 @@ class CrossValidation:
         self,
         X : np.ndarray, 
         Y : np.ndarray, 
-        num_folds : int, 
         epochs : int, 
+        num_folds : int, 
+
         learning_rate_values : list[tuple[int, int]], 
         batch_size_2_pow_values : list[int], 
-        K : list[int],
-        c : list[float], 
-        S : list[float], 
-        b1 : list[float], 
-        b2 : list[float], 
-        L2 : list[float],
+        K_values : list[int],
+        c_values : list[float], 
+        S_values : list[float], 
+        b1_and_b2_values : list[float], 
+        L2_values : list[float],
+        M_values : list[list[int]] = [],
+        h_values : list[list[int]] = [],
     ):
         self.X : np.ndarray = X
         self.Y : np.ndarray = Y
-        self.num_folds : int = num_folds
         self.epochs : int = epochs
+        self.num_folds : int = num_folds
+
         self.learning_rate_values : list[tuple[int, int]] = learning_rate_values 
         self.batch_size_2_pow_values : list[int] = batch_size_2_pow_values 
-        self.K : list[int] = K
-        self.c : list[float] = c
-        self.S : list[float] = S
-        self.b1 : list[float] = b1
-        self.b2 : list[float] = b2
-        self.L2 : list[float] = L2
+        self.K_values : list[int] = K_values
+        self.c_values : list[float] = c_values
+        self.S_values : list[float] = S_values
+        self.b1_and_b2_values : list[tuple[float, float]] = b1_and_b2_values
+        self.L2_values : list[float] = L2_values
+        self.M_values : list[list[int]] = M_values
+        self.h_values : list[list[str]] = h_values
 
     def evaluate_hiperparameters(self, M : list[int], h : list[str]):
         fold_size : int = len(self.X) // self.num_folds
-        indices = np.arange(len(self.X))
         fold_scores = []
-        for fold in range(self.num_folds):
-            val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
-            train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
+        indices = np.arange(len(self.X))
+        print(f"Cantidad de iteraciones estimada: {len(self.learning_rate_values) * len(self.batch_size_2_pow_values) * len(self.L2_values) * 2 * len(self.b1_and_b2_values) * len(self.K_values) * len(self.c_values) * len(self.S_values)}")
+        iteracion : int = 1
+        for lr_range in self.learning_rate_values:
+            for batch_size_2 in self.batch_size_2_pow_values:
+                for l2 in self.L2_values:
+                    for use_adam in [True, False]:
+                        for b1_b2 in self.b1_and_b2_values:
+                            for K in self.K_values:
+                                for c in self.c_values:
+                                    for S in self.S_values:
+                                        if K != 0 and (c != 0 or S != 0):
+                                            continue
+                                        for fold in range(self.num_folds):
+                                            val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
+                                            train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
 
-            X_train, X_val = self.X[train_indices], self.X[val_indices]
-            Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
+                                            X_train, X_val = self.X[train_indices], self.X[val_indices]
+                                            Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
 
-            M : RedNeuronal = RedNeuronal(M, h)
-            M.stochastic_gradient_descent(
-                X_train,
-                Y_train,
-                epochs=self.epochs,
-            )
+                                            M : RedNeuronal = RedNeuronal(M, h)
+                                            M.stochastic_gradient_descent(
+                                                X_train,
+                                                Y_train,
+                                                epochs=self.epochs,
+                                                learning_rate=lr_range,
+                                                batch_size_2_pow=batch_size_2,
+                                                K=K,
+                                                c=c,
+                                                S=S,
+                                                use_adam=use_adam,
+                                                b1=b1_b2[0],
+                                                b2=b1_b2[1],
+                                                L2=l2,
+                                            )
+                                            preds = M.forward_pass(X_val, M.W, M.w_0)
+                                            loss = M.cross_entropy(Y_val, preds)
+                                            fold_scores.append(np.mean(loss))
+                                        print(f"iteración: {iteracion}")
+                                        iteracion += 1
 
 class RedNeuronal:
     ## M: estructura sin input layer
