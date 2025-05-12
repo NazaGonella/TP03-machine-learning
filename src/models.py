@@ -110,7 +110,6 @@ class RedNeuronal:
         # K: K steps LR schedule
         # c: exponential LR schedule
         # S: exponential LR schedule
-        # Inicialización
         self.W, self.w_0 = self.initialize_weights()
         # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
         pred : np.ndarray
@@ -144,11 +143,24 @@ class RedNeuronal:
                 last_loss_mean = loss_mean
         self.pred = pred
 
-    def stochastic_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], batch_size_2_pow : int = 0, K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
+    def stochastic_gradient_descent(
+            self, 
+            X : np.ndarray, 
+            Y : np.ndarray, 
+            epochs : int, 
+            learning_rate : tuple[float, float], 
+            batch_size_2_pow : int = 0, 
+            K : int = 0, c : float = 0, 
+            S : float = 0, 
+            use_adam : bool = False, 
+            b1 : float = 0, 
+            b2 : float = 0, 
+            print_results_rate : int = -1
+        ) -> None:
+
         # K: K steps LR schedule
         # c: exponential LR schedule
         # S: exponential LR schedule
-        # Inicialización
         self.W, self.w_0 = self.initialize_weights()
         # pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
         pred : np.ndarray
@@ -156,6 +168,14 @@ class RedNeuronal:
         dW : list[np.ndarray] 
         dw_0 : list[np.ndarray]
         last_loss_mean : float = np.inf
+
+        # Adam parameters
+        m_t: list[np.ndarray] = [np.zeros_like(w) for w in self.W]
+        v_t: list[np.ndarray] = [np.zeros_like(w) for w in self.W]
+        m_t_0: list[np.ndarray] = [np.zeros_like(w) for w in self.w_0]
+        v_t_0: list[np.ndarray] = [np.zeros_like(w) for w in self.w_0]
+        epsilon : float = 1e-8
+        
         for epoch in range(1, epochs+1):
             batch_size : int = 2 ** batch_size_2_pow if 2 ** batch_size_2_pow < len(X) else len(X)
             for batch in range(len(X) // batch_size):
@@ -174,8 +194,29 @@ class RedNeuronal:
                     else:
                         lr_t = learning_rate[0] - (((learning_rate[0] - learning_rate[1]) / epochs) * (epoch-1))
 
-                    self.W[i] -= lr_t * dW[i]
-                    self.w_0[i] -= lr_t * dw_0[i]
+                    if use_adam:
+                        # Adam updates
+                        m_t[i] = b1 * m_t[i] + (1 - b1) * dW[i]
+                        v_t[i] = b2 * v_t[i] + (1 - b2) * (dW[i] ** 2)
+
+                        # Bias correction
+                        m_hat = m_t[i] / (1 - b1 ** epoch)
+                        v_hat = v_t[i] / (1 - b2 ** epoch)
+
+                        # Update weights
+                        self.W[i] -= lr_t * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                        # Repeat for bias
+                        m_t_0[i] = b1 * m_t_0[i] + (1 - b1) * dw_0[i]
+                        v_t_0[i] = b2 * v_t_0[i] + (1 - b2) * (dw_0[i] ** 2)
+                        m_hat_0 = m_t_0[i] / (1 - b1 ** epoch)
+                        v_hat_0 = v_t_0[i] / (1 - b2 ** epoch)
+
+                        self.w_0[i] -= lr_t * m_hat_0 / (np.sqrt(v_hat_0) + epsilon)
+                    else:
+                        # Standard gradient descent
+                        self.W[i] -= lr_t * dW[i]
+                        self.w_0[i] -= lr_t * dw_0[i]
             
             # print("loss.shape: ", loss.shape)
             if (epoch) % print_results_rate == 0 and print_results_rate != -1:
