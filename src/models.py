@@ -17,7 +17,7 @@ class CrossValidation:
         K_values : list[int],
         c_values : list[float], 
         S_values : list[float], 
-        b1_and_b2_values : list[float], 
+        b1_and_b2_values : list[tuple[float ,float]], 
         L2_values : list[float],
         M_values : list[list[int]] = [],
         h_values : list[list[int]] = [],
