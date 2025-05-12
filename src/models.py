@@ -158,7 +158,7 @@ class RedNeuronal:
             print_results_rate : int = -1
         ) -> None:
 
-        # K: K steps LR schedule
+        # K: K steps LR lineal schedule
         # c: exponential LR schedule
         # S: exponential LR schedule
         self.W, self.w_0 = self.initialize_weights()
@@ -190,7 +190,11 @@ class RedNeuronal:
                     if c > 0 and S > 0:
                         lr_t = learning_rate[0] * ((1 + ((epoch-1) / S))**c)
                     elif K > 0:
-                        lr_t = ((1 - ((epoch-1) / K))*learning_rate[0]) + (((epoch-1) / K)*learning_rate[1])
+                        # lr_t = ((1 - ((epoch-1) / K))*learning_rate[0]) + (((epoch-1) / K)*learning_rate[1])
+                        if epoch <= K:
+                            lr_t = ((1 - ((epoch - 1) / K)) * learning_rate[0]) + (((epoch - 1) / K) * learning_rate[1])
+                        else:
+                            lr_t = learning_rate[1]
                     else:
                         lr_t = learning_rate[0] - (((learning_rate[0] - learning_rate[1]) / epochs) * (epoch-1))
 
