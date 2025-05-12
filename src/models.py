@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
+import copy
 from collections.abc import Callable
 
 class CrossValidation:
@@ -78,10 +79,10 @@ class CrossValidation:
                                                 b2=b1_b2[1],
                                                 L2=l2,
                                             )
-                                            preds = model.forward_pass(X_val, model.W, M.w_0)
+                                            preds = model.forward_pass(X_val, model.W, model.w_0)
                                             loss = model.cross_entropy(Y_val, preds)
                                             scores_per_fold.append(np.mean(loss))
-                                        model_index.append(
+                                        model_score.append(
                                             {
                                                 'score' : np.mean(scores_per_fold),
                                                 'model_index' : model_index,
@@ -107,8 +108,8 @@ class RedNeuronal:
             h : list[str], 
         ):
         self.M : list[int] = M
-        self.M.append(48)
-        self.M.insert(0, 784)
+        # self.M.append(48)
+        # self.M.insert(0, 784)
         self.h : list[str] = h # funciones de activación, incluyendo última capa
         self.L : int = len(M) # cantidad de capas, incluyendo input y output.
         self.z : list[np.ndarray] = []
