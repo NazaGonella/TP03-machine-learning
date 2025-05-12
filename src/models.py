@@ -4,6 +4,53 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 from collections.abc import Callable
 
+class CrossValidation:
+    def __init__(
+        self,
+        X : np.ndarray, 
+        Y : np.ndarray, 
+        num_folds : int, 
+        epochs : int, 
+        learning_rate_values : list[tuple[int, int]], 
+        batch_size_2_pow_values : list[int], 
+        K : list[int],
+        c : list[float], 
+        S : list[float], 
+        b1 : list[float], 
+        b2 : list[float], 
+        L2 : list[float],
+    ):
+        self.X : np.ndarray = X
+        self.Y : np.ndarray = Y
+        self.num_folds : int = num_folds
+        self.epochs : int = epochs
+        self.learning_rate_values : list[tuple[int, int]] = learning_rate_values 
+        self.batch_size_2_pow_values : list[int] = batch_size_2_pow_values 
+        self.K : list[int] = K
+        self.c : list[float] = c
+        self.S : list[float] = S
+        self.b1 : list[float] = b1
+        self.b2 : list[float] = b2
+        self.L2 : list[float] = L2
+
+    def evaluate_hiperparameters(self, M : list[int], h : list[str]):
+        fold_size : int = len(self.X) // self.num_folds
+        indices = np.arange(len(self.X))
+        fold_scores = []
+        for fold in range(self.num_folds):
+            val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
+            train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
+
+            X_train, X_val = self.X[train_indices], self.X[val_indices]
+            Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
+
+            M : RedNeuronal = RedNeuronal(M, h)
+            M.stochastic_gradient_descent(
+                X_train,
+                Y_train,
+                epochs=self.epochs,
+            )
+
 class RedNeuronal:
     ## M: estructura sin input layer
     def __init__(
@@ -14,7 +61,7 @@ class RedNeuronal:
         self.M : list[int] = M
         self.M.append(48)
         self.M.insert(0, 784)
-        self.h : list[str] = h # Funciones de activación, incluyendo última capa
+        self.h : list[str] = h # funciones de activación, incluyendo última capa
         self.L : int = len(M) # cantidad de capas, incluyendo input y output.
         self.z : list[np.ndarray] = []
         self.a : list[np.ndarray] = []
@@ -27,10 +74,6 @@ class RedNeuronal:
             return np.where(x > 0, 1, 0)
         return np.where(x > 0, x, 0)
     
-    # def softmax(self, x : np.ndarray) -> np.ndarray:
-    #     e_x : np.ndarray = np.exp(x - np.max(x))
-    #     # return e_x / e_x.sum(axis=1)
-    #     return e_x / e_x.sum(axis=1, keepdims=True)
     def softmax(self, x: np.ndarray) -> np.ndarray:
         # Restar el valor máximo de cada fila para estabilizar la función softmax
         e_x = np.exp(x - np.max(x, axis=1, keepdims=True))
@@ -42,11 +85,6 @@ class RedNeuronal:
         # return - (y_true.T @ np.log(y_pred))
         return -np.sum(y_true * np.log(y_pred), axis=1)
     
-    # def cross_entropy_gradient(self, y_true : np.ndarray, y_pred : np.ndarray) -> np.ndarray:
-    #     epsilon = 1e-10
-    #     y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
-    #     # return - (y_true / y_pred)
-    #     return -np.sum(y_true / y_pred, axis=1, keepdims=True)
     def cross_entropy_gradient(self, y_true : np.ndarray, y_pred : np.ndarray) -> np.ndarray:
         epsilon = 1e-10
         y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
