@@ -72,12 +72,12 @@ class RedNeuronal:
             self.z.append(self.relu(self.a[l]) if self.h[l] == 'relu' else self.softmax(self.a[l]))
         return self.z[self.L-1]
     
-    def backward_pass(self, y, pred, W, w_0) -> np.ndarray:
+    def backward_pass(self, y, pred, W, w_0, L2 : float = 0.0) -> np.ndarray:
         delta : list[np.ndarray] = [np.zeros_like(a) for a in self.a]
         delta[self.L-2] = pred - y      # derivada de la cross-entropy con softmax
         dW : list[np.ndarray] = [np.zeros_like(W[l]) for l in range(self.L - 1)]
         dw_0 : list[np.ndarray] = [np.zeros_like(w_0[l]) for l in range(self.L - 1)]
-        dW[self.L - 2] = self.z[self.L - 2].T @ delta[self.L - 2]
+        dW[self.L - 2] = (self.z[self.L - 2].T @ delta[self.L - 2]) + (L2 * W[self.L - 2])
         dw_0[self.L - 2] = np.sum(delta[self.L - 2], axis=0)
         for l in range(self.L - 3, -1, -1):
             activation_grad : np.ndarray = self.relu(self.a[l], True) if self.h[l] == 'relu' else self.softmax(self.a[l], True)
@@ -87,14 +87,14 @@ class RedNeuronal:
             dw_0[l] = np.sum(delta[l], axis=0)
         return dW, dw_0
     
-    def computar_gradiente(self, x : np.ndarray, y : np.ndarray, W : np.ndarray, w_0 : np.ndarray) -> np.ndarray:
+    def computar_gradiente(self, x : np.ndarray, y : np.ndarray, W : np.ndarray, w_0 : np.ndarray, L2 : float = 0.0) -> np.ndarray:
         # Forward pass
         pred : np.ndarray = self.forward_pass(x, W, w_0)
         loss : np.ndarray = self.cross_entropy(y, pred)
         # Backward-pass
         dW : np.ndarray
         dw_0 : np.ndarray
-        dW, dw_0 = self.backward_pass(y, pred, W, w_0)
+        dW, dw_0 = self.backward_pass(y, pred, W, w_0, L2=L2)
         # print("")
         # print("W[self.L-2].shape: ", W[self.L-2].shape)
         # print("w_0[self.L-2].shape: ", w_0[self.L-2].shape)
@@ -127,7 +127,10 @@ class RedNeuronal:
                 if c > 0 and S > 0:
                     lr_t = learning_rate[0] * ((1 + ((epoch-1) / S))**c)
                 elif K > 0:
-                    lr_t = ((1 - ((epoch-1) / K))*learning_rate[0]) + (((epoch-1) / K)*learning_rate[1])
+                        if epoch <= K:
+                            lr_t = ((1 - ((epoch - 1) / K)) * learning_rate[0]) + (((epoch - 1) / K) * learning_rate[1])
+                        else:
+                            lr_t = learning_rate[1]
                 else:
                     lr_t = learning_rate[0] - (((learning_rate[0] - learning_rate[1]) / epochs) * (epoch-1))
 
@@ -151,11 +154,12 @@ class RedNeuronal:
             learning_rate : tuple[float, float], 
             batch_size_2_pow : int = 0, 
             K : int = 0,
-            c : float = 0, 
-            S : float = 0, 
+            c : float = 0.0, 
+            S : float = 0.0, 
             use_adam : bool = False, 
-            b1 : float = 0, 
-            b2 : float = 0, 
+            b1 : float = 0.0, 
+            b2 : float = 0.0, 
+            L2 : float = 0.0,
             print_results_rate : int = -1
         ) -> None:
 
@@ -182,7 +186,7 @@ class RedNeuronal:
             for batch in range(len(X) // batch_size):
                 X_b : np.ndarray = X[batch * batch_size : (batch + 1) * batch_size]
                 Y_b : np.ndarray = Y[batch * batch_size : (batch + 1) * batch_size]
-                pred, loss, dW, dw_0 = self.computar_gradiente(X_b, Y_b, self.W, self.w_0)
+                pred, loss, dW, dw_0 = self.computar_gradiente(X_b, Y_b, self.W, self.w_0, L2=L2)
                 
                 # actualizaciones
                 for i in range(self.L - 1):
