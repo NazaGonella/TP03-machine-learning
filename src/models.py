@@ -37,12 +37,12 @@ class CrossValidation:
         self.M_values : list[list[int]] = M_values
         self.h_values : list[list[str]] = h_values
 
-    def evaluate_hiperparameters(self, M : list[int], h : list[str]):
+    def evaluate_hiperparameters(self, M : list[int], h : list[str]) -> list[dict]:
         fold_size : int = len(self.X) // self.num_folds
-        fold_scores = []
+        model_score : list[dict] = []
         indices = np.arange(len(self.X))
         print(f"Cantidad de iteraciones estimada: {len(self.learning_rate_values) * len(self.batch_size_2_pow_values) * len(self.L2_values) * 2 * len(self.b1_and_b2_values) * len(self.K_values) * len(self.c_values) * len(self.S_values)}")
-        iteracion : int = 1
+        model_index : int = 0
         for lr_range in self.learning_rate_values:
             for batch_size_2 in self.batch_size_2_pow_values:
                 for l2 in self.L2_values:
@@ -51,8 +51,11 @@ class CrossValidation:
                             for K in self.K_values:
                                 for c in self.c_values:
                                     for S in self.S_values:
-                                        if K != 0 and (c != 0 or S != 0):
+                                        if (K != 0 and (c != 0 or S != 0)):
                                             continue
+                                        elif (K != 0 or c != 0 or S != 0) and (lr_range[0] == lr_range[1]):
+                                            continue
+                                        scores_per_fold : list[float] = []
                                         for fold in range(self.num_folds):
                                             val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
                                             train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
@@ -60,8 +63,8 @@ class CrossValidation:
                                             X_train, X_val = self.X[train_indices], self.X[val_indices]
                                             Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
 
-                                            M : RedNeuronal = RedNeuronal(M, h)
-                                            M.stochastic_gradient_descent(
+                                            model : RedNeuronal = RedNeuronal(M, h)
+                                            model.stochastic_gradient_descent(
                                                 X_train,
                                                 Y_train,
                                                 epochs=self.epochs,
@@ -75,11 +78,26 @@ class CrossValidation:
                                                 b2=b1_b2[1],
                                                 L2=l2,
                                             )
-                                            preds = M.forward_pass(X_val, M.W, M.w_0)
-                                            loss = M.cross_entropy(Y_val, preds)
-                                            fold_scores.append(np.mean(loss))
-                                        print(f"iteración: {iteracion}")
-                                        iteracion += 1
+                                            preds = model.forward_pass(X_val, model.W, M.w_0)
+                                            loss = model.cross_entropy(Y_val, preds)
+                                            scores_per_fold.append(np.mean(loss))
+                                        model_index.append(
+                                            {
+                                                'score' : np.mean(scores_per_fold),
+                                                'model_index' : model_index,
+                                                'lr_range' : lr_range,
+                                                'batch_size_2' : batch_size_2,
+                                                'l2' : l2,
+                                                'use_adam' : use_adam,
+                                                'b1_b2' : b1_b2,
+                                                'K' : K,
+                                                'c' : c,
+                                                'S' : S,
+                                            }
+                                        )
+                                        print(f"model index: {model_index}")
+                                        model_index += 1
+        return model_score
 
 class RedNeuronal:
     ## M: estructura sin input layer

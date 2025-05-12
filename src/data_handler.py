@@ -20,7 +20,6 @@ def get_splitted_dataset(
     # print("val_fraction: ", val_fraction)
     # print("test_fraction: ", test_fraction)
     
-    # Shuffle data
     indices = np.arange(len(df_x))
     np.random.seed(seed)
     np.random.shuffle(indices)
@@ -32,10 +31,29 @@ def get_splitted_dataset(
     val_indices = indices[train_end:val_end]
     test_indices = indices[val_end:]
     
-    # Split data
     X_train, y_train = df_x.iloc[train_indices], df_y.iloc[train_indices]
     X_val, y_val = df_x.iloc[val_indices], df_y.iloc[val_indices]
     X_test, y_test = df_x.iloc[test_indices], df_y.iloc[test_indices]
     
     return X_train, X_val, X_test, y_train, y_val, y_test
-    # return train, validation, test
+
+def get_train_and_test_split(
+        df_x: pd.DataFrame, 
+        df_y: pd.DataFrame, 
+        train_fraction: float = 0.8, 
+        seed: int = 42
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    
+    indices = np.arange(len(df_x))
+    np.random.seed(seed)
+    np.random.shuffle(indices)
+    
+    train_end = int(train_fraction * len(indices))
+    
+    train_indices = indices[:train_end]
+    test_indices = indices[train_end:]
+    
+    X_train, y_train = df_x.iloc[train_indices], df_y.iloc[train_indices]
+    X_test, y_test = df_x.iloc[test_indices], df_y.iloc[test_indices]
+    
+    return X_train, X_test, y_train, y_test
