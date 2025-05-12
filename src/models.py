@@ -106,7 +106,7 @@ class RedNeuronal:
         # print("")
         return pred, loss, dW, dw_0
     
-    def batch_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], K : int = 0, c : float = 0, S : float = 0, print_results_rate : int = -1) -> None:
+    def batch_gradient_descent(self, X : np.ndarray, Y : np.ndarray, epochs : int, learning_rate : tuple[float, float], K : int = 0, c : float = 0, S : float = 0, L2 : float = 0.0, print_results_rate : int = -1) -> None:
         # K: K steps LR schedule
         # c: exponential LR schedule
         # S: exponential LR schedule
@@ -118,7 +118,7 @@ class RedNeuronal:
         dw_0 : list[np.ndarray]
         last_loss_mean : float = np.inf
         for epoch in range(1, epochs+1):
-            pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0)
+            pred, loss, dW, dw_0 = self.computar_gradiente(X, Y, self.W, self.w_0, L2=L2)
             
             # actualizaciones
             for i in range(self.L - 1):
