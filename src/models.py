@@ -171,6 +171,8 @@ class CrossValidation:
                         'K' : self.K_values[0],
                         'c' : self.c_value,
                         'S' : self.S_values[0],
+                        'M' : m,
+                        'h' : h,
                     }
                 )
                 # print(batch_size_2)
