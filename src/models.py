@@ -12,11 +12,11 @@ class CrossValidation:
         Y : np.ndarray, 
         epochs : int, 
         num_folds : int, 
+        c_value : float,
 
         learning_rate_values : list[tuple[int, int]], 
         batch_size_2_pow_values : list[int], 
         K_values : list[int],
-        c_values : list[float], 
         S_values : list[float], 
         b1_and_b2_values : list[tuple[float ,float]], 
         L2_values : list[float],
@@ -27,11 +27,11 @@ class CrossValidation:
         self.Y : np.ndarray = Y
         self.epochs : int = epochs
         self.num_folds : int = num_folds
+        self.c_value = c_value
 
         self.learning_rate_values : list[tuple[int, int]] = learning_rate_values 
         self.batch_size_2_pow_values : list[int] = batch_size_2_pow_values 
         self.K_values : list[int] = K_values
-        self.c_values : list[float] = c_values
         self.S_values : list[float] = S_values
         self.b1_and_b2_values : list[tuple[float, float]] = b1_and_b2_values
         self.L2_values : list[float] = L2_values
@@ -42,7 +42,7 @@ class CrossValidation:
         fold_size : int = len(self.X) // self.num_folds
         model_score : list[dict] = []
         indices = np.arange(len(self.X))
-        print(f"Cantidad de iteraciones estimada: {len(self.learning_rate_values) * len(self.batch_size_2_pow_values) * len(self.L2_values) * 2 * len(self.b1_and_b2_values) * len(self.K_values) * len(self.c_values) * len(self.S_values)}")
+        print(f"Cantidad de iteraciones estimada: {len(self.learning_rate_values) * len(self.batch_size_2_pow_values) * len(self.L2_values) * 2 * len(self.b1_and_b2_values) * len(self.K_values) * len(self.S_values)}")
         model_index : int = 0
         for lr_range in self.learning_rate_values:
             for batch_size_2 in self.batch_size_2_pow_values:
@@ -50,54 +50,54 @@ class CrossValidation:
                     for use_adam in [True, False]:
                         for b1_b2 in self.b1_and_b2_values:
                             for K in self.K_values:
-                                for c in self.c_values:
-                                    for S in self.S_values:
-                                        if (K != 0 and (c != 0 or S != 0)):
-                                            continue
-                                        elif (K != 0 or c != 0 or S != 0) and (lr_range[0] == lr_range[1]):
-                                            continue
-                                        scores_per_fold : list[float] = []
-                                        for fold in range(self.num_folds):
-                                            val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
-                                            train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
+                                for S in self.S_values:
+                                    if (K != 0 and (S != 0)):
+                                        continue
+                                    elif (K != 0 or S != 0) and (lr_range[0] == lr_range[1]):
+                                        continue
+                                    scores_per_fold : list[float] = []
+                                    for fold in range(self.num_folds):
+                                        val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
+                                        train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
 
-                                            X_train, X_val = self.X[train_indices], self.X[val_indices]
-                                            Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
+                                        X_train, X_val = self.X[train_indices], self.X[val_indices]
+                                        Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
 
-                                            model : RedNeuronal = RedNeuronal(M, h)
-                                            model.stochastic_gradient_descent(
-                                                X_train,
-                                                Y_train,
-                                                epochs=self.epochs,
-                                                learning_rate=lr_range,
-                                                batch_size_2_pow=batch_size_2,
-                                                K=K,
-                                                c=c,
-                                                S=S,
-                                                use_adam=use_adam,
-                                                b1=b1_b2[0],
-                                                b2=b1_b2[1],
-                                                L2=l2,
-                                            )
-                                            preds = model.forward_pass(X_val, model.W, model.w_0)
-                                            loss = model.cross_entropy(Y_val, preds)
-                                            scores_per_fold.append(np.mean(loss))
-                                        model_score.append(
-                                            {
-                                                'score' : np.mean(scores_per_fold),
-                                                'model_index' : model_index,
-                                                'lr_range' : lr_range,
-                                                'batch_size_2' : batch_size_2,
-                                                'l2' : l2,
-                                                'use_adam' : use_adam,
-                                                'b1_b2' : b1_b2,
-                                                'K' : K,
-                                                'c' : c,
-                                                'S' : S,
-                                            }
+                                        model : RedNeuronal = RedNeuronal(M, h)
+                                        model.stochastic_gradient_descent(
+                                            X_train,
+                                            Y_train,
+                                            epochs=self.epochs,
+                                            learning_rate=lr_range,
+                                            batch_size_2_pow=batch_size_2,
+                                            K=K,
+                                            c=self.c_value,
+                                            S=S,
+                                            use_adam=use_adam,
+                                            b1=b1_b2[0],
+                                            b2=b1_b2[1],
+                                            L2=l2,
                                         )
-                                        print(f"model index: {model_index}")
-                                        model_index += 1
+                                        preds = model.forward_pass(X_val, model.W, model.w_0)
+                                        loss = model.cross_entropy(Y_val, preds)
+                                        scores_per_fold.append(np.mean(loss))
+                                    model_score.append(
+                                        {
+                                            'score' : np.mean(scores_per_fold),
+                                            'model_index' : model_index,
+                                            'lr_range' : lr_range,
+                                            'batch_size_2' : batch_size_2,
+                                            'l2' : l2,
+                                            'use_adam' : use_adam,
+                                            'b1_b2' : b1_b2,
+                                            'K' : K,
+                                            'c' : self.c_value,
+                                            'S' : S,
+                                        }
+                                    )
+                                    print(batch_size_2)
+                                    print(f"model index: {model_index}")
+                                    model_index += 1
         return model_score
 
 class RedNeuronal:
