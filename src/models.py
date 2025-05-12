@@ -110,6 +110,74 @@ class CrossValidation:
                                 model_index += 1
         return model_score
     
+    def evaluate_architectures(self, M_values : list[list[int]], h_values : list[list[str]], use_adam : bool = False) -> list[dict]:
+        fold_size : int = len(self.X) // self.num_folds
+        model_score : list[dict] = []
+        indices = np.arange(len(self.X))
+        # print(f"Cantidad de iteraciones estimada: {len(self.batch_size_2_pow_values) * len(self.L2_values) * 2 * len(self.b1_and_b2_values) * len(self.K_values) * len(self.S_values)}")
+        model_index : int = 0
+        folds_x_train : list[np.ndarray] = []
+        folds_y_train : list[np.ndarray] = []
+        folds_x_val : list[np.ndarray] = []
+        folds_y_val : list[np.ndarray] = []
+        for fold in range(self.num_folds):
+            val_indices = indices[fold * fold_size : (fold + 1) * fold_size]
+            train_indices = np.setdiff1d(indices, val_indices, assume_unique=True)
+
+            X_train, X_val = self.X[train_indices], self.X[val_indices]
+            Y_train, Y_val = self.Y[train_indices], self.Y[val_indices]
+
+            folds_x_train.append(self.X[train_indices])
+            folds_y_train.append(self.Y[train_indices])
+            folds_x_val.append(self.X[val_indices])
+            folds_y_val.append(self.Y[val_indices])
+        for m in M_values:
+            for h in h_values:
+                if len(h) != len(m) - 1:
+                    continue
+                accuracies_per_fold : list[float] = []
+                for fold in range(self.num_folds):
+                    X_train, X_val = folds_x_train[fold], folds_x_val[fold]
+                    Y_train, Y_val = folds_y_train[fold], folds_y_val[fold]
+
+                    model : RedNeuronal = RedNeuronal(m, h)
+                    model.stochastic_gradient_descent(
+                        X_train,
+                        Y_train,
+                        epochs=self.epochs,
+                        learning_rate=self.learning_rate,
+                        batch_size_2_pow=self.batch_size_2_pow_values[0],
+                        K=self.K_values[0],
+                        c=self.c_value,
+                        S=self.S_values[0],
+                        use_adam=use_adam,
+                        b1=self.b1_and_b2_values[0][0],
+                        b2=self.b1_and_b2_values[0][1],
+                        L2=self.L2_values[0],
+                    )
+                    pred = model.forward_pass(X_val, model.W, model.w_0)
+                    # loss = model.cross_entropy(Y_val, preds)
+                    accuracy = model.get_accuracy(Y_val, pred)
+                    accuracies_per_fold.append(np.mean(accuracy))
+                model_score.append(
+                    {
+                        'accuracy' : np.mean(accuracies_per_fold),
+                        'model_index' : model_index,
+                        'lr_range' : self.learning_rate,
+                        'batch_size_2' : self.batch_size_2_pow_values[0],
+                        'l2' : self.L2_values[0],
+                        'use_adam' : use_adam,
+                        'b1_b2' : self.b1_and_b2_values[0],
+                        'K' : self.K_values[0],
+                        'c' : self.c_value,
+                        'S' : self.S_values[0],
+                    }
+                )
+                # print(batch_size_2)
+                print(f"model index: {model_index}")
+                model_index += 1
+        return model_score
+    
     def print_n_scores(self, model_score: list[dict], n: int) -> None:
         top_n = sorted(model_score, key=lambda x: x['accuracy'], reverse=True)[:n]
         for entry in top_n:
