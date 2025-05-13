@@ -429,5 +429,15 @@ class RedNeuronal:
         true_labels = np.argmax(y_ground_truth, axis=1)
         return np.mean(pred_labels == true_labels)
     
+    def get_confusion_matrix(self, y_ground_truth: np.ndarray, pred: np.ndarray) -> np.ndarray:
+        num_classes: int = y_ground_truth.shape[1]
+        pred_labels: np.ndarray = np.argmax(pred, axis=1)
+        true_labels: np.ndarray = np.argmax(y_ground_truth, axis=1)
+        cm: np.ndarray = np.zeros((num_classes, num_classes), dtype=int)
+        for true, pred_label in zip(true_labels, pred_labels):
+            cm[true, pred_label] += 1
+        return cm
+
+    
     def get_prediction(self, x : np.ndarray) -> np.ndarray:
         return self.forward_pass(x, self.W, self.w_0)
